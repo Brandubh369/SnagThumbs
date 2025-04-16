@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnagThumbs | YouTube Thumbnail Downloader</title>
+    <meta name="description" content="Download YouTube thumbnails in HD with dark/light mode. The fastest tool with direct links and no watermarks.">
+    <style>
+        :root {
+            --primary: #FF0000;
+            --primary-dark: #FF3333;
+            --secondary: #282828;
+            --secondary-light: #f9f9f9;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --bg-light: #ffffff;
+            --bg-dark: #121212;
+            --card-light: #ffffff;
+            --card-dark: #1e1e1e;
+            --border-light: #e0e0e0;
+            --border-dark: #333;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            background: var(--bg-light);
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 30rem;
+            margin: 0 auto;
+        }
+        
+        #input-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        #yt-url {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--bg-light);
+            color: var(--text-light);
+            transition: all 0.3s;
+        }
+        
+        .dark-mode #yt-url {
+            background: var(--card-dark);
+            color: var(--text-dark);
+            border-color: var(--border-dark);
+        }
+        
+        #get-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #get-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        
+        .thumbnail-card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            background: var(--card-light);
+        }
+        
+        .dark-mode .thumbnail-card {
+            background: var(--card-dark);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        
+        .thumbnail-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .thumbnail-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .thumbnail-actions {
+            padding: 1rem;
+            background: var(--card-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .dark-mode .thumbnail-actions {
+            background: var(--card-dark);
+        }
+        
+        .quality-badge {
+            background: var(--secondary);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .download-btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .download-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .premium-features {
+            background: var(--card-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s;
+        }
+        
+        .dark-mode .premium-features {
+            background: var(--card-dark);
+            border-color: var(--border-dark);
+        }
+        
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            opacity: 1;
+            transform: rotate(30deg);
+        }
+        
+        @media (max-width: 600px) {
+            #input-section {
+                flex-direction: column;
+            }
+            
+            #get-btn {
+                padding: 0.8rem 1rem;
+            }
+            
+            .theme-toggle {
+                position: relative;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="themeToggle">🌓</button>
+            <h1>SnagThumbs</h1>
+            <p class="tagline">Download YouTube thumbnails in HD with dark/light mode</p>
+        </header>
+
+        <div id="input-section">
+            <input type="url" id="yt-url" placeholder="Paste YouTube URL here..." aria-label="YouTube video URL">
+            <button id="get-btn">Get Thumbnails</button>
+        </div>
+
+        <div id="result-section" style="display: none;">
+            <h2>Available Thumbnails</h2>
+            <div class="thumbnail-grid" id="thumbnails-container"></div>
+            
+            <div class="premium-features">
+                <h3>Want More Power?</h3>
+                <ul>
+                    <li><strong>AI Upscaling:</strong> Enhance low-quality thumbnails</li>
+                    <li><strong>Bulk Download:</strong> Get thumbnails from entire playlists</li>
+                    <li><strong>Auto-Cropping:</strong> Perfect sizes for Instagram, Twitter, etc.</li>
+                </ul>
+                <button style="margin-top: 1rem;">Upgrade to Pro ($3/month)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        // Check localStorage or system preference
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDarkScheme.matches)) {
+            document.body.classList.add('dark-mode');
+            themeToggle.textContent = '🌞';
+        } else {
+            themeToggle.textContent = '🌙';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.textContent = isDark ? '🌞' : '🌙';
+        });
+
+        // Thumbnail Downloader Functionality
+        document.getElementById('get-btn').addEventListener('click', function() {
+            const url = document.getElementById('yt-url').value.trim();
+            const resultSection = document.getElementById('result-section');
+            
+            // Basic validation
+            if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+                alert('Please enter a valid YouTube URL');
+                return;
+            }
+            
+            // Extract video ID
+            let videoId = '';
+            if (url.includes('youtube.com/watch?v=')) {
+                videoId = url.split('v=')[1].split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0];
+            }
+            
+            if (videoId.length !== 11) {
+                alert('Could not extract video ID - check your URL');
+                return;
+            }
+            
+            // Generate thumbnails
+            const qualities = [
+                { name: 'Max Resolution', code: 'maxresdefault' },
+                { name: 'High Quality', code: 'hqdefault' },
+                { name: 'Medium Quality', code: 'mqdefault' },
+                { name: 'Standard Quality', code: 'sddefault' },
+                { name: 'Default', code: 'default' }
+            ];
+            
+            const container = document.getElementById('thumbnails-container');
+            container.innerHTML = '';
+            
+            qualities.forEach(quality => {
+                const imgUrl = `https://img.youtube.com/vi/${videoId}/${quality.code}.jpg`;
+                
+                const card = document.createElement('div');
+                card.className = 'thumbnail-card';
+                
+                const img = document.createElement('img');
+                img.className = 'thumbnail-img';
+                img.src = imgUrl;
+                img.alt = `${quality.name} thumbnail`;
+                img.loading = 'lazy';
+                
+                const actions = document.createElement('div');
+                actions.className = 'thumbnail-actions';
+                
+                const badge = document.createElement('span');
+                badge.className = 'quality-badge';
+                badge.textContent = quality.name;
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.className = 'download-btn';
+                downloadLink.href = imgUrl;
+                downloadLink.download = `thumbnail-${videoId}-${quality.code}.jpg`;
+                downloadLink.textContent = 'Download';
+                
+                actions.appendChild(badge);
+                actions.appendChild(downloadLink);
+                card.appendChild(img);
+                card.appendChild(actions);
+                container.appendChild(card);
+            });
+            
+            resultSection.style.display = 'block';
+        });
+    </script>
+    <div class="content-container">
+        <!-- Introduction Section -->
+        <section class="intro-section">
+            <h2>Welcome to SnagThumbs – Your Ultimate YouTube Thumbnail Downloader!</h2>
+            <p>Are you looking to download YouTube thumbnails in high-definition for your personal use or to enhance your content? Look no further! SnagThumbs is a free, user-friendly tool that allows you to download YouTube thumbnails in various quality options. Whether you're working on a video project, creating digital content, or just want to save your favorite thumbnails, we’ve got you covered!</p>
+            <p>With our fast and simple interface, you can quickly grab thumbnails from any YouTube video by simply pasting the URL into the box. Additionally, we support both light and dark modes to provide an optimal browsing experience.</p>
+            <h3>What You Can Do with SnagThumbs:</h3>
+            <ul>
+                <li>Download thumbnails in HD for any YouTube video.</li>
+                <li>Easily access high-quality images from your favorite YouTube videos.</li>
+                <li>Enjoy seamless functionality in both light and dark modes.</li>
+            </ul>
+            <p>Get started now by entering your favorite YouTube video URL above!</p>
+        </section>
+    
+        <!-- FAQ Section -->
+        <section class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <h3>How do I download YouTube thumbnails using SnagThumbs?</h3>
+                <p>Simply paste the URL of a YouTube video into the input box above, and hit the "Get Thumbnails" button. You will be shown a list of available thumbnails in different resolutions, ready to be downloaded!</p>
+            </div>
+            <div class="faq-item">
+                <h3>What resolutions can I download?</h3>
+                <p>We provide YouTube thumbnails in the following resolutions:</p>
+                <ul>
+                    <li>Max Resolution (highest quality available)</li>
+                    <li>High Quality</li>
+                    <li>Medium Quality</li>
+                    <li>Standard Quality</li>
+                    <li>Default Quality (smallest file size)</li>
+                </ul>
+            </div>
+            <div class="faq-item">
+                <h3>Is it legal to use these thumbnails?</h3>
+                <p>YouTube thumbnails are public, but it's important to respect copyright. Thumbnails are often the intellectual property of the video creator, so please make sure you have the right to use them for any purposes beyond personal use.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I use SnagThumbs on mobile?</h3>
+                <p>Yes! SnagThumbs is fully mobile-responsive, so you can download YouTube thumbnails on your phone or tablet just as easily as on your desktop.</p>
+            </div>
+        </section>
+    
+        <!-- Blog Section -->
+        <section class="blog-section">
+            <h2>Why Thumbnails Matter: How to Grab Attention and Boost Your YouTube Views</h2>
+            <p>Thumbnails are the first impression viewers get of your YouTube video, and as a result, they play a major role in determining whether or not someone will click on your video. In this blog post, we explore why thumbnails are crucial for increasing your video views and how you can create or select the perfect thumbnail.</p>
+            <h3>The Importance of Thumbnails</h3>
+            <ul>
+                <li><strong>First Impressions Count:</strong> A good thumbnail stands out among many others in search results. A unique and engaging thumbnail can make the difference between a viewer clicking your video or skipping over it.</li>
+                <li><strong>Branding:</strong> Thumbnails offer a way to showcase your brand. By using consistent colors, fonts, and layout styles, you can make your videos easily recognizable.</li>
+            </ul>
+            <h3>How to Create Attention-Grabbing Thumbnails</h3>
+            <ol>
+                <li>Use high-resolution images that aren’t pixelated.</li>
+                <li>Add bold text to describe the video’s topic.</li>
+                <li>Use a contrasting color scheme to make the thumbnail pop.</li>
+                <li>Include facial expressions or emotions to create a sense of connection with viewers.</li>
+            </ol>
+        </section>
+    
+        <!-- Legal Disclaimer -->
+        <section class="disclaimer-section">
+            <h2>Disclaimer</h2>
+            <p>SnagThumbs provides a tool for downloading publicly available thumbnails from YouTube videos. These thumbnails are the intellectual property of the video creators, and it is the responsibility of the user to ensure they are using these images in accordance with applicable copyright laws. SnagThumbs does not claim ownership of any thumbnails and does not promote the unauthorized use of copyrighted material.</p>
+        </section>
+    
+        <!-- Testimonials Section -->
+        <section class="testimonials-section">
+            <h2>What Our Users Are Saying</h2>
+            <div class="testimonial-item">
+                <p>"I love SnagThumbs! It's so easy to download thumbnails for my videos, and the quality is amazing!"</p>
+                <p>- Alex, YouTuber</p>
+            </div>
+            <div class="testimonial-item">
+                <p>"I use SnagThumbs to grab thumbnails for my social media posts. It’s quick and super simple!"</p>
+                <p>- Maria, Digital Content Creator</p>
+            </div>
+        </section>
+    </div>
+    
+    <style>
+        .content-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            font-family: 'Arial', sans-serif;
+        }
+    
+        section {
+            margin-bottom: 2rem;
+        }
+    
+        h2 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+    
+        h3 {
+            font-size: 1.5rem;
+            color: #444;
+            margin-bottom: 1rem;
+        }
+    
+        p, ul, ol {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+        }
+    
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+    
+        .faq-item, .testimonial-item {
+            margin-bottom: 1rem;
+        }
+    
+        .testimonials-section p {
+            font-style: italic;
+        }
+    
+        .intro-section ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+    
+        /* Add some styling for the sections */
+        .intro-section, .faq-section, .blog-section, .disclaimer-section, .testimonials-section {
+            padding: 1.5rem;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+    
+        .intro-section h2, .faq-section h2, .blog-section h2, .disclaimer-section h2, .testimonials-section h2 {
+            font-weight: 600;
+        }
+    
+        .intro-section p, .faq-section p, .blog-section p, .disclaimer-section p, .testimonials-section p {
+            font-size: 1rem;
+            color: #555;
+        }
+    
+        .testimonial-item p {
+            font-size: 1rem;
+            color: #333;
+        }
+    </style>
+    
+</body>
+</html>
